@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
-import { setLogin } from '@/redux/slices/userSlice'; // Apni file path check kar lein
+import { setLogin } from '@/redux/slices/userSlice'; 
 import Link from 'next/link';
 import { Eye, EyeOff, Mail, Lock, Sparkles, CheckCircle2, UserCheck } from 'lucide-react';
 
@@ -38,12 +38,10 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        // Redux mein data save karein
+        localStorage.setItem("token", data.token);
         dispatch(setLogin({ user: data.user, token: data.token }));
-        
         setMessage("Login successful! Redirecting...");
-        // Redirecting to dashboard (assume it's the next step)
-        setTimeout(() => router.push('/dashboard'), 2000); 
+        setTimeout(() => router.push('/dashboard'), 2000);
       } else {
         setMessage(data.error || "Invalid email or password.");
       }
@@ -104,10 +102,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="block text-sm font-medium text-slate-700">Password</label>
-                <Link href="#" className="text-xs text-purple-600 font-semibold hover:underline">Forgot password?</Link>
-              </div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
                 <input name="password" onChange={handleChange} required type={showPassword ? 'text' : 'password'} className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition" placeholder="••••••••" />
@@ -126,20 +121,6 @@ export default function LoginPage() {
               {loading ? "Logging in..." : "Log In"}
             </button>
           </form>
-
-          <div className="my-6 flex items-center gap-4 text-slate-400 text-sm">
-            <div className="flex-1 h-px bg-slate-200"></div>
-            <span>or continue with</span>
-            <div className="flex-1 h-px bg-slate-200"></div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            {['Google', 'GitHub', 'Apple'].map((provider) => (
-              <button key={provider} type="button" className="py-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 transition text-sm font-medium text-slate-600">
-                {provider}
-              </button>
-            ))}
-          </div>
 
           <p className="mt-8 text-center text-slate-600">
             Don't have an account?{' '}
