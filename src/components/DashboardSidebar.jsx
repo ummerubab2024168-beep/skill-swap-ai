@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LogOut } from 'lucide-react'; // Agar icons use kar rahi hain
+import { LogOut } from 'lucide-react'; 
 
 export default function DashboardSidebar({ active }) {
   return (
@@ -12,6 +12,9 @@ export default function DashboardSidebar({ active }) {
         <Link href="/dashboard" className={`block p-3 rounded-lg ${active === 'dashboard' ? 'bg-purple-950 font-bold' : 'hover:bg-purple-800'}`}>Dashboard</Link>
         <Link href="/dashboard/profile" className={`block p-3 rounded-lg ${active === 'profile' ? 'bg-purple-950 font-bold' : 'hover:bg-purple-800'}`}>Profile</Link>
         <Link href="/dashboard/my-skills" className={`block p-3 rounded-lg ${active === 'my-skills' ? 'bg-purple-950 font-bold' : 'hover:bg-purple-800'}`}>My Skills</Link>
+        
+        {/* Browse Skills link added here */}
+        <Link href="/dashboard/browse-skills" className={`block p-3 rounded-lg ${active === 'browse' ? 'bg-purple-950 font-bold' : 'hover:bg-purple-800'}`}>Browse Skills</Link>
       </nav>
 
       {/* Logout Button at the bottom */}
