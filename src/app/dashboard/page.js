@@ -1,7 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // 1. Router import kiya
-import Sidebar from '../../components/layout/Sidebar';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import DashboardSidebar from '../../components/DashboardSidebar'; // Naya component import
 import Navbar from '../../components/layout/Navbar';
 import { Brain, GitCompare, MessageSquare, CheckCircle, Plus, Search, BookOpen, Send, AlertCircle } from 'lucide-react';
 
@@ -20,10 +21,10 @@ function StatCard({ title, value, icon: Icon, color, bg }) {
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
-  const router = useRouter(); // 2. Router initialize kiya
+  const [totalSkills, setTotalSkills] = useState(0);
+  const router = useRouter();
 
   useEffect(() => {
-    // 3. Security Check: Agar token nahi hai, to direct login par bhejo
     const token = localStorage.getItem('token');
     if (!token) {
       router.push('/login');
@@ -39,13 +40,24 @@ export default function DashboardPage() {
         const data = await res.json();
         setUser(data);
       } else {
-        // Agar token invalid hai (expire ho gaya hai)
         localStorage.removeItem('token');
         router.push('/login');
       }
     }
+
+    async function fetchSkillCount() {
+      const res = await fetch('/api/skills', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTotalSkills(data.length);
+      }
+    }
+
     fetchDashboardData();
-  }, [router]); // Dependencies mein router add kiya
+    fetchSkillCount();
+  }, [router]);
 
   const activities = [
     { text: 'New swap request received for React.js', time: '2m ago', icon: AlertCircle },
@@ -53,31 +65,29 @@ export default function DashboardPage() {
     { text: 'New message from Sarah J.', time: '3h ago', icon: MessageSquare },
   ];
 
-  // Loading state waisa hi hai, safe
   if (!user) return <div className="p-10">Loading Dashboard...</div>;
 
   return (
     <div className="flex min-h-screen bg-slate-50">
-      <Sidebar />
+      {/* Sidebar refactored */}
+      <DashboardSidebar active="dashboard" />
+      
       <div className="flex-1 ml-64">
         <Navbar />
         <main className="p-8 space-y-8">
           
-          {/* Welcome Section */}
           <div className="bg-gradient-to-r from-purple-700 to-purple-900 rounded-3xl p-8 text-white shadow-xl">
             <h1 className="text-3xl font-bold">Welcome back, {user.name?.split(' ')[0]}! 👋</h1>
             <p className="text-purple-200 mt-2">You're doing great! Keep sharing your knowledge.</p>
           </div>
 
-          {/* Dynamic Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <StatCard title="My Skills" value={user.skills?.length || 0} icon={Brain} color="text-purple-600" bg="bg-purple-50" />
+            <StatCard title="My Skills" value={totalSkills} icon={Brain} color="text-purple-600" bg="bg-purple-50" />
             <StatCard title="Experience" value={user.experience?.length || 0} icon={GitCompare} color="text-blue-600" bg="bg-blue-50" />
             <StatCard title="Messages" value="18" icon={MessageSquare} color="text-orange-600" bg="bg-orange-50" />
             <StatCard title="Completed" value="08" icon={CheckCircle} color="text-green-600" bg="bg-green-50" />
           </div>
 
-          {/* Baqi design same hai */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
               <h3 className="font-bold text-lg mb-4 text-gray-800">Recent Activity</h3>
@@ -97,7 +107,11 @@ export default function DashboardPage() {
             <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
               <h3 className="font-bold text-lg mb-4 text-gray-800">Quick Actions</h3>
               <div className="grid grid-cols-2 gap-3">
-                {[ {name: 'Add Skill', icon: Plus}, {name: 'Browse', icon: Search}, {name: 'Requests', icon: BookOpen}, {name: 'Chat', icon: Send} ].map((item, i) => (
+                <Link href="/dashboard/my-skills/add" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-100 hover:border-purple-200 hover:bg-purple-50 transition-all text-gray-600 hover:text-purple-700">
+                  <Plus size={20} className="mb-2"/>
+                  <span className="text-xs font-medium">Add Skill</span>
+                </Link>
+                {[ {name: 'Browse', icon: Search}, {name: 'Requests', icon: BookOpen}, {name: 'Chat', icon: Send} ].map((item, i) => (
                   <button key={i} className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-100 hover:border-purple-200 hover:bg-purple-50 transition-all text-gray-600 hover:text-purple-700">
                     <item.icon size={20} className="mb-2"/>
                     <span className="text-xs font-medium">{item.name}</span>

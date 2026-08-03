@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import DashboardSidebar from '../../../components/DashboardSidebar';
 
 export default function ProfilePage() {
   const [data, setData] = useState(null);
@@ -55,15 +56,11 @@ export default function ProfilePage() {
 
   return (
     <div className="flex min-h-screen bg-slate-50">
-      <div className="w-64 bg-purple-900 text-white p-6 flex flex-col space-y-8">
-        <h1 className="text-xl font-bold flex items-center gap-2">{"</>"} Swap Skill</h1>
-        <nav className="space-y-2">
-          <p className="text-xs text-purple-300 pl-3 uppercase tracking-wider">Menu</p>
-          <a href="#" className="block p-3 rounded-lg bg-purple-950 text-white font-medium">Profile</a>
-        </nav>
-      </div>
+      {/* Sidebar Component */}
+      <DashboardSidebar active="profile" />
 
-      <div className="flex-1 p-8">
+      {/* Main Content Area - ml-64 added here to fix layout */}
+      <div className="flex-1 p-8 ml-64">
         <div className="max-w-5xl mx-auto space-y-6">
           <div className="flex justify-end items-center gap-4 mb-8 pb-4 border-b">
               <p className='font-semibold text-gray-800'>{data.name}</p>
