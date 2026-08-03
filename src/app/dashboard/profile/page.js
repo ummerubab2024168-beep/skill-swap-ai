@@ -82,7 +82,15 @@ export default function ProfilePage() {
                   <div className="text-slate-500 text-sm mt-2 space-y-1">
                       <p>📧 {data.email}</p>
                       <p>📍 {data.location || "Location not set"}</p>
-                      <p>📅 Joined {data.joinedDate || "May 2024"}</p>
+                     <p>
+  📅 Joined{" "}
+  {data.createdAt
+    ? new Date(data.createdAt).toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      })
+    : "N/A"}
+</p>
                   </div>
                 </div>
               </div>
@@ -102,10 +110,6 @@ export default function ProfilePage() {
                    <div>
                        <label className="block text-purple-700 font-bold mb-1">Location</label>
                        <input className="w-full p-4 border rounded-xl bg-slate-50" value={formData.location || ''} onChange={e => setFormData({...formData, location: e.target.value})} placeholder="Location" />
-                   </div>
-                   <div>
-                       <label className="block text-purple-700 font-bold mb-1">Joined Date</label>
-                       <input className="w-full p-4 border rounded-xl bg-slate-50" value={formData.joinedDate || ''} onChange={e => setFormData({...formData, joinedDate: e.target.value})} placeholder="Joined Date" />
                    </div>
                    <div>
                        <label className="block text-purple-700 font-bold mb-1">Skills</label>
