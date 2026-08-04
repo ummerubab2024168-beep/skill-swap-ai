@@ -11,6 +11,10 @@ export default function BrowseSkillsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
+  // Request loading & status tracking per skill
+  const [requestStates, setRequestStates] = useState({});
+  const [feedbackMessage, setFeedbackMessage] = useState({ text: '', type: '' });
+
   useEffect(() => {
     fetchBrowseSkills();
   }, []);
@@ -25,7 +29,22 @@ export default function BrowseSkillsPage() {
       if (!res.ok) throw new Error('Failed to fetch skills');
       
       const json = await res.json();
-      setSkills(json.data || []);
+      const fetchedSkills = json.data || [];
+      setSkills(fetchedSkills);
+
+      // Initialize requestStates based on backend requestStatus ('Pending', 'Accepted', or null)
+      const initialStates = {};
+      fetchedSkills.forEach(skill => {
+        if (skill.requestStatus) {
+          initialStates[skill._id] = { 
+            sent: true, 
+            status: skill.requestStatus, 
+            loading: false 
+          };
+        }
+      });
+      setRequestStates(initialStates);
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -33,8 +52,46 @@ export default function BrowseSkillsPage() {
     }
   };
 
-  const handleSendSwapRequest = (skillId) => {
-    console.log('Selected Skill ID:', skillId);
+  const handleSendSwapRequest = async (skillId) => {
+    setFeedbackMessage({ text: '', type: '' });
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      setFeedbackMessage({ text: 'Unauthorized: No token provided. Please log in again.', type: 'error' });
+      return;
+    }
+
+    // Set loading state for this specific skill button
+    setRequestStates(prev => ({ ...prev, [skillId]: { ...prev[skillId], loading: true } }));
+
+    try {
+      const res = await fetch('/api/swap/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ skillId })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to send swap request');
+      }
+
+      // Success state for this specific skill (defaults to Pending upon new send)
+      setRequestStates(prev => ({
+        ...prev,
+        [skillId]: { loading: false, sent: true, status: 'Pending' }
+      }));
+
+      setFeedbackMessage({ text: 'Swap request sent successfully', type: 'success' });
+
+    } catch (err) {
+      setRequestStates(prev => ({ ...prev, [skillId]: { ...prev[skillId], loading: false } }));
+      setFeedbackMessage({ text: err.message, type: 'error' });
+    }
   };
 
   // Filter Logic
@@ -61,6 +118,17 @@ export default function BrowseSkillsPage() {
           <div className="mb-8">
             <h1 className="text-3xl font-extrabold text-gray-950 mb-6">Browse Skills</h1>
             
+            {/* Global Feedback Banner */}
+            {feedbackMessage.text && (
+              <div className={`mb-6 p-4 rounded-xl text-sm font-medium ${
+                feedbackMessage.type === 'success' 
+                  ? 'bg-green-50 text-green-700 border border-green-200' 
+                  : 'bg-red-50 text-red-700 border border-red-200'
+              }`}>
+                {feedbackMessage.text}
+              </div>
+            )}
+
             {/* Search and Filter Bar */}
             <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
               <input 
@@ -89,29 +157,53 @@ export default function BrowseSkillsPage() {
             <div className="text-center py-20 text-gray-500">No skills found matching your criteria.</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredSkills.map((skill) => (
-                <div key={skill._id} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col">
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full uppercase">{skill.category}</span>
-                    <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-full">{skill.level}</span>
-                  </div>
-                  
-                  <h3 className="text-xl font-bold text-gray-950 mb-2">{skill.skillName}</h3>
-                  <p className="text-gray-600 text-sm mb-6 flex-grow line-clamp-3">{skill.description}</p>
-                  
-                  <div className="pt-4 border-t border-slate-50 mt-auto">
-                    <p className="text-sm font-bold text-gray-800">{skill.ownerName}</p>
-                    <p className="text-xs text-gray-500 mb-4">📍 {skill.ownerLocation}</p>
+              {filteredSkills.map((skill) => {
+                const state = requestStates[skill._id] || {};
+                const isSent = state.sent || skill.hasRequested;
+                const requestStatus = state.status || skill.requestStatus;
+                const isLoading = state.loading;
 
-                    <button
-                      onClick={() => handleSendSwapRequest(skill._id)}
-                      className="w-full py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-xl transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-                    >
-                      Send Swap Request
-                    </button>
+                // Determine button text & styling based on status
+                let buttonText = 'Send Swap Request';
+                let buttonStyle = 'bg-purple-600 hover:bg-purple-700 text-white';
+
+                if (isLoading) {
+                  buttonText = 'Sending...';
+                } else if (isSent) {
+                  if (requestStatus === 'Accepted') {
+                    buttonText = 'Accepted';
+                    buttonStyle = 'bg-green-100 text-green-700 cursor-not-allowed font-semibold';
+                  } else {
+                    buttonText = 'Request Sent';
+                    buttonStyle = 'bg-gray-100 text-gray-400 cursor-not-allowed';
+                  }
+                }
+
+                return (
+                  <div key={skill._id} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col">
+                    <div className="flex justify-between items-start mb-4">
+                      <span className="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full uppercase">{skill.category}</span>
+                      <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-full">{skill.level}</span>
+                    </div>
+                    
+                    <h3 className="text-xl font-bold text-gray-950 mb-2">{skill.skillName}</h3>
+                    <p className="text-gray-600 text-sm mb-6 flex-grow line-clamp-3">{skill.description}</p>
+                    
+                    <div className="pt-4 border-t border-slate-50 mt-auto">
+                      <p className="text-sm font-bold text-gray-800">{skill.ownerName}</p>
+                      <p className="text-xs text-gray-500 mb-4">📍 {skill.ownerLocation}</p>
+
+                      <button
+                        onClick={() => handleSendSwapRequest(skill._id)}
+                        disabled={isLoading || isSent}
+                        className={`w-full py-2.5 px-4 font-medium rounded-xl transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${buttonStyle}`}
+                      >
+                        {buttonText}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

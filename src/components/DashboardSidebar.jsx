@@ -13,8 +13,11 @@ export default function DashboardSidebar({ active }) {
         <Link href="/dashboard/profile" className={`block p-3 rounded-lg ${active === 'profile' ? 'bg-purple-950 font-bold' : 'hover:bg-purple-800'}`}>Profile</Link>
         <Link href="/dashboard/my-skills" className={`block p-3 rounded-lg ${active === 'my-skills' ? 'bg-purple-950 font-bold' : 'hover:bg-purple-800'}`}>My Skills</Link>
         
-        {/* Browse Skills link added here */}
+        {/* Browse Skills link */}
         <Link href="/dashboard/browse-skills" className={`block p-3 rounded-lg ${active === 'browse' ? 'bg-purple-950 font-bold' : 'hover:bg-purple-800'}`}>Browse Skills</Link>
+
+        {/* Swap Requests link added for Step 6 */}
+        <Link href="/dashboard/swap-requests" className={`block p-3 rounded-lg ${active === 'requests' ? 'bg-purple-950 font-bold' : 'hover:bg-purple-800'}`}>Swap Requests</Link>
       </nav>
 
       {/* Logout Button at the bottom */}
