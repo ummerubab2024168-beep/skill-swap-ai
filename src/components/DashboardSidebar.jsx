@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { LogOut } from 'lucide-react'; 
 
-export default function DashboardSidebar({ active }) {
+export default function DashboardSidebar({ active, unreadTotal = 0 }) {
   return (
     <div className="w-64 bg-purple-900 text-white p-6 flex flex-col min-h-screen fixed left-0 top-0">
       {/* Title */}
@@ -16,13 +16,23 @@ export default function DashboardSidebar({ active }) {
         {/* Browse Skills link */}
         <Link href="/dashboard/browse-skills" className={`block p-3 rounded-lg ${active === 'browse' ? 'bg-purple-950 font-bold' : 'hover:bg-purple-800'}`}>Browse Skills</Link>
 
-        {/* Swap Requests link added for Step 6 */}
+        {/* Swap Requests link */}
         <Link href="/dashboard/swap-requests" className={`block p-3 rounded-lg ${active === 'requests' ? 'bg-purple-950 font-bold' : 'hover:bg-purple-800'}`}>Swap Requests</Link>
+
+        {/* Chat link with unread badge */}
+        <Link href="/dashboard/chat" className={`flex items-center justify-between p-3 rounded-lg ${active === 'chat' ? 'bg-purple-950 font-bold' : 'hover:bg-purple-800'}`}>
+          <span>Chat</span>
+          {unreadTotal > 0 && (
+            <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+              {unreadTotal}
+            </span>
+          )}
+        </Link>
       </nav>
 
       {/* Logout Button at the bottom */}
       <div className="mt-auto pt-6 border-t border-purple-800">
-        <button onClick={() => { localStorage.removeItem('token'); window.location.href = '/login'; }} className="flex items-center gap-2 text-purple-200 hover:text-white transition">
+        <button onClick={() => { localStorage.removeItem('token'); localStorage.removeItem('userId'); window.location.href = '/login'; }} className="flex items-center gap-2 text-purple-200 hover:text-white transition">
           <LogOut size={18} /> Logout
         </button>
       </div>

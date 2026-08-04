@@ -39,6 +39,7 @@ export default function LoginPage() {
 
       if (response.ok) {
         localStorage.setItem("token", data.token);
+        localStorage.setItem("userId", data.user.id);
         dispatch(setLogin({ user: data.user, token: data.token }));
         setMessage("Login successful! Redirecting...");
         setTimeout(() => router.push('/dashboard'), 2000);
