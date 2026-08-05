@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import DashboardSidebar from '@/components/DashboardSidebar';
-import { Search, Send, MessageSquare, User, RefreshCw, MoreVertical, Check, CheckCheck } from 'lucide-react';
+import { Search, Send, MessageSquare, User, RefreshCw, CheckCheck } from 'lucide-react';
 
 export default function ChatPage() {
   const [conversations, setConversations] = useState([]);
@@ -15,7 +15,6 @@ export default function ChatPage() {
   const [error, setError] = useState('');
   const [unreadCounts, setUnreadCounts] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeMenuMsgId, setActiveMenuMsgId] = useState(null);
 
   const [currentUserId, setCurrentUserId] = useState(null);
   const messagesEndRef = useRef(null);
@@ -171,14 +170,7 @@ export default function ChatPage() {
 
       if (res.ok) {
         const newMessages = data.data || [];
-
-        setMessages((prevMessages) => {
-          if (newMessages.length !== prevMessages.length) {
-            return newMessages;
-          }
-          const hasNew = newMessages.some((msg, idx) => prevMessages[idx]?._id !== msg._id || prevMessages[idx]?.isRead !== msg.isRead);
-          return hasNew ? newMessages : prevMessages;
-        });
+        setMessages(newMessages);
 
         if (selectedUserRef.current && selectedUserRef.current._id === userId) {
           setUnreadCounts(prev => ({ ...prev, [userId]: 0 }));
@@ -223,7 +215,6 @@ export default function ChatPage() {
   const handleSelectUser = async (user) => {
     setSelectedUser(user);
     setError('');
-    setActiveMenuMsgId(null);
     setUnreadCounts(prev => ({ ...prev, [user._id]: 0 }));
 
     await markMessagesAsRead(user._id);
@@ -263,38 +254,6 @@ export default function ChatPage() {
       setError(err.message);
     } finally {
       setSending(false);
-    }
-  };
-
-  const handleDeleteMessage = async (messageId, type) => {
-    setActiveMenuMsgId(null);
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
-    try {
-      const endpoint = type === 'everyone' ? '/api/chat/delete-everyone' : '/api/chat/delete-me';
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ messageId }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to delete message');
-      }
-
-      if (type === 'everyone') {
-        setMessages(prev => prev.map(m => m._id === messageId ? { ...m, message: 'This message was deleted', isDeleted: true } : m));
-      } else {
-        setMessages(prev => prev.filter(m => m._id !== messageId));
-      }
-    } catch (err) {
-      console.error('Error deleting message:', err);
-      setError(err.message);
     }
   };
 
@@ -415,7 +374,7 @@ export default function ChatPage() {
                       return (
                         <div
                           key={msg._id}
-                          className={`flex flex-col relative group ${isMe ? 'items-end' : 'items-start'}`}
+                          className={`flex flex-col relative ${isMe ? 'items-end' : 'items-start'}`}
                         >
                           <div className="flex items-center gap-2 max-w-md">
                             <div
@@ -425,38 +384,8 @@ export default function ChatPage() {
                                   : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none'
                               }`}
                             >
-                              <p className={msg.isDeleted ? 'italic text-gray-300' : ''}>{msg.message}</p>
+                              <p>{msg.message}</p>
                             </div>
-
-                            {!msg.isDeleted && (
-                              <div className="relative">
-                                <button
-                                  onClick={() => setActiveMenuMsgId(activeMenuMsgId === msg._id ? null : msg._id)}
-                                  className="opacity-0 group-hover:opacity-100 transition p-1 text-gray-400 hover:text-gray-600 rounded-full bg-white shadow-xs border border-gray-200"
-                                >
-                                  <MoreVertical size={14} />
-                                </button>
-
-                                {activeMenuMsgId === msg._id && (
-                                  <div className={`absolute z-10 w-36 bg-white border border-gray-200 rounded-xl shadow-lg py-1 text-xs text-gray-700 ${isMe ? 'right-0' : 'left-0'} mt-1`}>
-                                    {isMe && (
-                                      <button
-                                        onClick={() => handleDeleteMessage(msg._id, 'everyone')}
-                                        className="w-full text-left px-3 py-2 hover:bg-gray-100 text-red-600 font-medium"
-                                      >
-                                        Delete for everyone
-                                      </button>
-                                    )}
-                                    <button
-                                      onClick={() => handleDeleteMessage(msg._id, 'me')}
-                                      className="w-full text-left px-3 py-2 hover:bg-gray-100 text-gray-700 font-medium"
-                                    >
-                                      Delete for me
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            )}
                           </div>
 
                           <div className="flex items-center gap-1 mt-1 px-1 text-[10px] text-gray-400">

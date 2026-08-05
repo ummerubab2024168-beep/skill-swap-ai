@@ -33,11 +33,18 @@ export async function GET(req) {
     // 4. Connect to MongoDB
     await dbConnect();
 
-    // 5. Fetch messages between logged-in user and target user, sorted by oldest first
+    // 5. Fetch messages between logged-in user and target user, excluding messages deleted for the current user
     const messages = await Message.find({
-      $or: [
-        { sender: currentUserId, receiver: userId },
-        { sender: userId, receiver: currentUserId },
+      $and: [
+        {
+          $or: [
+            { sender: currentUserId, receiver: userId },
+            { sender: userId, receiver: currentUserId },
+          ],
+        },
+        {
+          deletedFor: { $ne: currentUserId },
+        },
       ],
     })
       .populate('sender', 'name email')
