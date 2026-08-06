@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardSidebar from '../../../components/DashboardSidebar';
 
 export default function BrowseSkillsPage() {
@@ -14,6 +15,7 @@ export default function BrowseSkillsPage() {
   // Request loading & status tracking per skill
   const [requestStates, setRequestStates] = useState({});
   const [feedbackMessage, setFeedbackMessage] = useState({ text: '', type: '' });
+  const router = useRouter();
 
   useEffect(() => {
     fetchBrowseSkills();
@@ -200,6 +202,12 @@ export default function BrowseSkillsPage() {
                       >
                         {buttonText}
                       </button>
+                      <button
+  onClick={() => router.push(`/dashboard/profile?userId=${skill.ownerId}`)}
+  className="w-full mt-2 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors"
+>
+  View Profile
+</button>
                     </div>
                   </div>
                 );

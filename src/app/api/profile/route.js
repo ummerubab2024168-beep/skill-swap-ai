@@ -12,7 +12,9 @@ export async function GET(req) {
     if (!token) return NextResponse.json({ error: "No token provided" }, { status: 401 });
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select("-password");
+    const { searchParams } = new URL(req.url);
+const requestedUserId = searchParams.get("userId");
+    const user = await User.findById(requestedUserId || decoded.id).select("-password");
     
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
     

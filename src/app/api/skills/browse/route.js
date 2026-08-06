@@ -59,6 +59,7 @@ export async function GET(req) {
         category: skill.category,
         level: skill.proficiencyLevel,
         description: skill.description,
+        ownerId: skill.owner?._id?.toString(),
         ownerName: skill.owner?.name || 'Unknown',
         ownerLocation: skill.owner?.location || 'Unknown',
         hasRequested: !!requestStatus, // true if Pending or Accepted

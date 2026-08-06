@@ -1,13 +1,19 @@
 'use client';
 import { useState, useEffect } from 'react';
 import DashboardSidebar from '../../../components/DashboardSidebar';
+import ReviewForm from '@/components/ReviewForm';
 
 export default function ProfilePage() {
   const [data, setData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
+  const [reviews, setReviews] = useState([]);
+  const [averageRating, setAverageRating] = useState(0);
+  const [totalReviews, setTotalReviews] = useState(0);
 
-  useEffect(() => { fetchProfile(); }, []);
+  useEffect(() => { 
+    fetchProfile(); 
+  }, []);
 
   const getInitials = (name) => {
     if (!name) return 'U';
@@ -17,13 +23,43 @@ export default function ProfilePage() {
   async function fetchProfile() {
     const token = localStorage.getItem('token');
     if (!token) return;
-    const res = await fetch('/api/profile', { headers: { 'Authorization': `Bearer ${token}` } });
+   const params = new URLSearchParams(window.location.search);
+const userId = params.get("userId");
+
+const res = await fetch(
+  `/api/profile${userId ? `?userId=${userId}` : ""}`,
+  {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+);
     if (res.ok) {
       const json = await res.json();
-      setData(json);
-      const expText = json.experience?.map(e => `${e.role} at ${e.company}`).join('\n') || '';
-      const skillsText = Array.isArray(json.skills) ? json.skills.join(', ') : json.skills;
-      setFormData({ ...json, experience: expText, skills: skillsText });
+      const profileData = json.user || json;
+      setData(profileData);
+      const expText = profileData.experience?.map(e => `${e.role} at ${e.company}`).join('\n') || '';
+      const skillsText = Array.isArray(profileData.skills) ? profileData.skills.join(', ') : profileData.skills;
+      setFormData({ ...profileData, experience: expText, skills: skillsText });
+
+      const userId = profileData._id || profileData.id;
+      if (userId) {
+        fetchReviews(userId);
+      }
+    }
+  }
+
+  async function fetchReviews(userId) {
+    try {
+      const reviewRes = await fetch(`/api/reviews?userId=${userId}`);
+      const reviewData = await reviewRes.json();
+      if (reviewRes.ok) {
+        setReviews(reviewData.data.reviews);
+        setAverageRating(reviewData.data.averageRating);
+        setTotalReviews(reviewData.data.totalReviews);
+      }
+    } catch (err) {
+      console.error('Failed to fetch reviews', err);
     }
   }
 
@@ -44,15 +80,22 @@ export default function ProfilePage() {
 
     if (res.ok) {
       const updated = await res.json();
-      setData(updated);
+      setData(updated.user || updated);
       setIsEditing(false);
       fetchProfile();
     }
   }
 
+  const handleReviewSubmitted = () => {
+    if (data?._id || data?.id) {
+      fetchReviews(data._id || data.id);
+    }
+  };
+
   if (!data) return <div className="p-10 text-center text-gray-500">Loading...</div>;
 
   const initials = getInitials(data.name);
+  const profileUserId = data._id || data.id;
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -79,6 +122,13 @@ export default function ProfilePage() {
                 <div>
                   <h2 className="text-4xl font-extrabold text-gray-950">{data.name}</h2>
                   <p className="text-purple-700 font-medium">{data.title || "Software Developer"}</p>
+                  
+                  {/* Rating Badge */}
+                  <div className="flex items-center mt-2 space-x-2">
+                    <span className="text-yellow-500 font-bold text-lg">★ {averageRating}</span>
+                    <span className="text-gray-500 text-sm">({totalReviews} reviews)</span>
+                  </div>
+
                   <div className="text-slate-500 text-sm mt-2 space-y-1">
                       <p>📧 {data.email}</p>
                       <p>📍 {data.location || "Location not set"}</p>
@@ -147,6 +197,47 @@ export default function ProfilePage() {
                     <div key={i} className="mb-2"><p className="font-semibold text-gray-800">● {e.role}</p><p className="text-gray-600 text-sm ml-5">at {e.company}</p></div>
                   )) : <p className="text-gray-400">No experience added.</p>}
                 </div>
+              </div>
+
+              {/* Ratings & Reviews List Section */}
+              <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+                {/* Review Form - Show only when viewing another user's profile */}
+                {new URLSearchParams(window.location.search).get("userId") && (
+                  <ReviewForm revieweeId={profileUserId} onReviewSubmitted={handleReviewSubmitted} />
+                )}
+                <h3 className="text-sm font-bold text-purple-600 uppercase tracking-widest mb-4">
+                  RATINGS & REVIEWS ({totalReviews})
+                </h3>
+
+                {reviews.length === 0 ? (
+                  <p className="text-gray-400 text-sm">No reviews yet.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {reviews.map((rev) => (
+                      <div key={rev._id} className="p-4 border border-purple-100 rounded-2xl space-y-2 bg-purple-50/30">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-8 h-8 bg-purple-200 rounded-full flex items-center justify-center text-purple-800 font-semibold text-sm">
+                              {rev.reviewer?.name ? rev.reviewer.name.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                            <span className="font-medium text-purple-900 text-sm">{rev.reviewer?.name || 'Anonymous'}</span>
+                          </div>
+                          <div className="flex items-center text-yellow-400">
+                            {[...Array(5)].map((_, i) => (
+                              <span key={i} className={i < rev.rating ? 'text-yellow-400' : 'text-gray-300'}>
+                                ★
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-gray-700 text-sm pl-10">{rev.review}</p>
+                        <div className="text-right text-xs text-gray-400">
+                          {new Date(rev.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
