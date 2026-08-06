@@ -101,3 +101,50 @@ export async function GET(req) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
+export async function PUT(req) {
+  try {
+    await dbConnect();
+
+    const reviewerId = getUserIdFromToken(req);
+    if (!reviewerId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const { reviewee, rating, review, reviewId } = await req.json();
+
+   const updatedReview = await Review.findOneAndUpdate(
+  {
+    _id: reviewId,
+    reviewer: reviewerId
+  },
+  {
+    rating,
+    review
+  },
+  {
+    new: true
+  }
+);
+
+    if (!updatedReview) {
+      return NextResponse.json(
+        { success: false, message: "Review not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: updatedReview
+    });
+
+  } catch (err) {
+    return NextResponse.json(
+      { success: false, message: err.message },
+      { status: 500 }
+    );
+  }
+}

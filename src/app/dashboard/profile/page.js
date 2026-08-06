@@ -8,6 +8,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [reviews, setReviews] = useState([]);
+  const [myReview, setMyReview] = useState(null);
   const [averageRating, setAverageRating] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
 
@@ -57,6 +58,19 @@ const res = await fetch(
         setReviews(reviewData.data.reviews);
         setAverageRating(reviewData.data.averageRating);
         setTotalReviews(reviewData.data.totalReviews);
+        const token = localStorage.getItem("token");
+
+if (token) {
+  const payload = JSON.parse(atob(token.split(".")[1]));
+
+const loggedInUserId = payload.userId || payload.id;
+
+const myReviewData = reviewData.data.reviews.find(
+  (r) => String(r.reviewer?._id) === String(loggedInUserId)
+);
+
+setMyReview(myReviewData);
+}
       }
     } catch (err) {
       console.error('Failed to fetch reviews', err);
@@ -203,7 +217,11 @@ const res = await fetch(
               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-4">
                 {/* Review Form - Show only when viewing another user's profile */}
                 {new URLSearchParams(window.location.search).get("userId") && (
-                  <ReviewForm revieweeId={profileUserId} onReviewSubmitted={handleReviewSubmitted} />
+                 <ReviewForm
+  revieweeId={profileUserId}
+  existingReview={myReview}
+  onReviewSubmitted={handleReviewSubmitted}
+/>
                 )}
                 <h3 className="text-sm font-bold text-purple-600 uppercase tracking-widest mb-4">
                   RATINGS & REVIEWS ({totalReviews})
@@ -231,6 +249,14 @@ const res = await fetch(
                           </div>
                         </div>
                         <p className="text-gray-700 text-sm pl-10">{rev.review}</p>
+                        {myReview?._id === rev._id && (
+  <button
+    onClick={() => setMyReview(rev)}
+    className="ml-10 mt-2 text-sm text-purple-600 hover:underline"
+  >
+    Edit Review
+  </button>
+)}
                         <div className="text-right text-xs text-gray-400">
                           {new Date(rev.createdAt).toLocaleDateString()}
                         </div>

@@ -2,13 +2,17 @@
 
 import React, { useState } from 'react';
 
-export default function ReviewForm({ revieweeId, onReviewSubmitted }) {
-  const [rating, setRating] = useState(0);
-  const [hover, setHover] = useState(0);
-  const [reviewText, setReviewText] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [loading, setLoading] = useState(false);
+export default function ReviewForm({
+  revieweeId,
+  existingReview = null,
+  onReviewSubmitted,
+}) {
+ const [rating, setRating] = useState(existingReview?.rating || 0);
+const [hover, setHover] = useState(0);
+const [reviewText, setReviewText] = useState(existingReview?.review || '');
+const [error, setError] = useState('');
+const [success, setSuccess] = useState('');
+const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,16 +43,17 @@ export default function ReviewForm({ revieweeId, onReviewSubmitted }) {
 }
 
       const res = await fetch('/api/reviews', {
-        method: 'POST',
+  method: existingReview ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          reviewee: revieweeId,
-          rating,
-          review: reviewText
-        })
+  reviewee: revieweeId,
+  rating,
+  review: reviewText,
+  reviewId: existingReview?._id
+})
       });
 
       const data = await res.json();
@@ -57,9 +62,11 @@ export default function ReviewForm({ revieweeId, onReviewSubmitted }) {
         throw new Error(data.message || 'Failed to submit review');
       }
 
-      setSuccess('Review submitted successfully!');
-      setRating(0);
-      setReviewText('');
+      setSuccess(existingReview ? 'Review updated successfully!' : 'Review submitted successfully!');
+      if (!existingReview) {
+  setRating(0);
+  setReviewText('');
+}
 
       if (onReviewSubmitted) {
         onReviewSubmitted?.(data.data);
@@ -73,8 +80,24 @@ export default function ReviewForm({ revieweeId, onReviewSubmitted }) {
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-md border border-purple-100 max-w-lg mx-auto">
-      <h3 className="text-lg font-semibold text-purple-900 mb-4">Leave a Review</h3>
+      <div className="flex justify-between items-center mb-4">
+  <h3 className="text-lg font-semibold text-purple-900">
+    {existingReview ? "Edit Review" : "Leave a Review"}
+  </h3>
 
+  {existingReview && (
+    <button
+      type="button"
+      onClick={() => {
+        setRating(existingReview.rating);
+        setReviewText(existingReview.review);
+      }}
+      className="px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+    >
+      Edit
+    </button>
+  )}
+</div>
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg">
           {error}
