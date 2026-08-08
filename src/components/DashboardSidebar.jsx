@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import { LogOut } from 'lucide-react'; 
+import { LogOut, Bot } from 'lucide-react'; 
 
 export default function DashboardSidebar({ active, unreadTotal = 0 }) {
   return (
-    <div className="w-64 bg-purple-900 text-white p-6 flex flex-col min-h-screen fixed left-0 top-0">
+    <div className="w-64 bg-purple-900 text-white p-6 flex flex-col min-h-screen fixed left-0 top-0 z-50">
       {/* Title */}
       <h1 className="text-xl font-bold flex items-center gap-2 mb-8">{"</>"} Swap Skill</h1>
       
@@ -27,6 +27,11 @@ export default function DashboardSidebar({ active, unreadTotal = 0 }) {
               {unreadTotal}
             </span>
           )}
+        </Link>
+
+        {/* AI Assistant link */}
+        <Link href="/ai-assistant" className={`flex items-center gap-2 p-3 rounded-lg ${active === 'ai-assistant' ? 'bg-purple-950 font-bold' : 'hover:bg-purple-800'}`}>
+          <Bot size={18} /> AI Assistant
         </Link>
       </nav>
 

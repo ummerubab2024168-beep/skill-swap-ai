@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import Navbar from '../../components/layout/Navbar';
-import { Brain, GitCompare, MessageSquare, CheckCircle, Plus, Search, BookOpen, Send, AlertCircle } from 'lucide-react';
+import { Brain, GitCompare, MessageSquare, CheckCircle, Plus, Search, BookOpen, Send, AlertCircle, Bot } from 'lucide-react';
 
 function StatCard({ title, value, icon: Icon, color, bg }) {
   return (
@@ -44,7 +44,7 @@ export default function DashboardPage() {
         
         if (res.ok) {
           const data = await res.json();
-setUser(data.user || data);
+          setUser(data.user || data);
         } else {
           localStorage.removeItem('token');
           router.push('/login');
@@ -211,6 +211,11 @@ setUser(data.user || data);
                 <Link href="/dashboard/browse-skills" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-100 hover:border-purple-200 hover:bg-purple-50 transition-all text-gray-600 hover:text-purple-700">
                   <Search size={20} className="mb-2"/>
                   <span className="text-xs font-medium">Browse</span>
+                </Link>
+
+                <Link href="/ai-assistant" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-100 hover:border-purple-200 hover:bg-purple-50 transition-all text-gray-600 hover:text-purple-700">
+                  <Bot size={20} className="mb-2"/>
+                  <span className="text-xs font-medium">AI Assistant</span>
                 </Link>
 
                 <Link href="/dashboard/swap-requests" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-100 hover:border-purple-200 hover:bg-purple-50 transition-all text-gray-600 hover:text-purple-700 relative">
